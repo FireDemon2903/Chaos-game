@@ -13,6 +13,7 @@ public class ShapeGenerator : MonoBehaviour
 
     [Range(3, 10)] public int NumVertecies;
     [Min(0)] public float BaseShapeRadius;
+    [Range(.001f, 0.05f)] public float PointRadius;
     [Min(0)] public int KiloNumOfPoints;
     int Points => KiloNumOfPoints * 1000;
 
@@ -50,12 +51,12 @@ public class ShapeGenerator : MonoBehaviour
             Vector3 randomPos = vertices[index]; // Get the position of the selected vertex
 
             // New point calculation using the custom ratio
-            Vector3 newDot = (sPos + randomPos) * ratio;
+            Vector3 newDot = (sPos + randomPos) * (1 - ratio);
 
             pointPos[i] = newDot; // Store the new point
             sPos = newDot; // Move the current position to the new point
 
-            CreateObject(newDot, vertexColors[index], .01f);
+            CreateObject(newDot, vertexColors[index], PointRadius);
         }
     }
 
@@ -99,7 +100,7 @@ public class ShapeGenerator : MonoBehaviour
             y = yn;
         }
 
-        CreateObjects(positions, Color.green, .01f);
+        CreateObjects(positions, Color.green, PointRadius);
         //return positions;
     }
 
