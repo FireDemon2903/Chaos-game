@@ -1,12 +1,18 @@
-﻿//using System;
+﻿using System;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class ShapeGenerator : MonoBehaviour
 {
-    public enum ShapeType { Triangle, Square, Pentagon, Hexagon, Fern };
-    public ShapeType shapeType = ShapeType.Triangle;
-    [Min(0)] public float radius;
+    //enum ShapeType { Triangle, Square, Pentagon, Hexagon, BarnsleyFern };
+    //ShapeType shapeType = ShapeType.Triangle;
 
+    // WTF is this??? https://openprocessing.org/sketch/136642/
+
+    [Range(3, 10)] public int NumVertecies;
+    [Min(0)] public float BaseShapeRadius;
     [Min(0)] public int KiloNumOfPoints;
     int Points => KiloNumOfPoints * 1000;
 
@@ -17,93 +23,40 @@ public class ShapeGenerator : MonoBehaviour
 
     private void Start()
     {
-        GenerateShape();
-    }
+        //print(CalculateOptRatio(6));
+        //print(CAlculateOptRatio(6));
 
-    private void GenerateShape()
-    {
-        //vertices = CalculateShapePositions();
-        //CreateObjects(vertices, Color.green, .1f);
-        //GenerateFractal(Points);
+        vertices = CalculateShapePositions();
+        CreateObjects(vertices, Color.green, .1f);
+        GenerateFractal(Points);
 
-        Fern();
+        ////Fern();
 
         Debug.Break();  // Pause editor so computer does not die
     }
 
+    # region Generation
     private void GenerateFractal(int iter)
     {
-        Vector3 sPos = transform.position;
+        Vector3 sPos = transform.position; // Starting position
+        pointPos = new Vector3[iter]; // Array to hold points
 
-        pointPos = new Vector3[iter];
-
-        Color[] vertexColors = new Color[vertices.Length]; // Array to store colors for each vertex
-
-        // Generate a unique color for each vertex
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            vertexColors[i] = Random.ColorHSV();
-        }
+        Color[] vertexColors = GenColors(); // Array to store colors for each vertex
+        float ratio = CalculateOptRatio(NumVertecies); // Ratio calculation
 
         for (int i = 0; i < iter; i++)
         {
-            int index = Random.Range(0, vertices.Length);
-            Vector3 randomPos = vertices[index];
+            int index = Random.Range(0, vertices.Length); // Select a random vertex
+            Vector3 randomPos = vertices[index]; // Get the position of the selected vertex
 
-            Vector3 newDot = (sPos + randomPos) * .5f;
+            // New point calculation using the custom ratio
+            Vector3 newDot = (sPos + randomPos) * ratio;
 
-            pointPos[i] = newDot;
-
-            sPos = newDot;
+            pointPos[i] = newDot; // Store the new point
+            sPos = newDot; // Move the current position to the new point
 
             CreateObject(newDot, vertexColors[index], .01f);
         }
-    }
-
-    private Vector3[] CalculateShapePositions()
-    {
-        Vector3[] calculatedPositions = shapeType switch
-        {
-            ShapeType.Triangle => CalculateRegularPolygonPositions(3),
-            ShapeType.Square => CalculateRegularPolygonPositions(4),
-            ShapeType.Pentagon => CalculateRegularPolygonPositions(5),
-            ShapeType.Hexagon => CalculateRegularPolygonPositions(6),
-            //ShapeType.Fern => Fern(),
-            _ => new Vector3[1],
-        };
-        return calculatedPositions;
-    }
-
-    private Vector3[] CalculateRegularPolygonPositions(int numberOfSides)
-    {
-        Vector3[] calculatedPositions = new Vector3[numberOfSides];
-        float angleStep = 2 * Mathf.PI / numberOfSides; // Calculate the angle between each vertex
-
-        for (int i = 0; i < numberOfSides; i++)
-        {
-            float angle = angleStep * i + Mathf.PI / 2; // Adding π/2 to rotate counterclockwise by 90 degrees
-            float x = radius * Mathf.Cos(angle);
-            float y = radius * Mathf.Sin(angle);
-            calculatedPositions[i] = transform.position + new Vector3(x, y, 0);
-        }
-
-        return calculatedPositions;
-    }
-
-    private void CreateObjects(Vector3[] calculatedPositions, Color color, float rad)
-    {
-        foreach (Vector3 pos in calculatedPositions)
-        {
-            CreateObject(pos, color, rad);
-        }
-    }
-
-    private void CreateObject(Vector3 position, Color color, float rad)
-    {
-        GameObject emptyGameObject = Instantiate(dot, transform);
-        emptyGameObject.GetComponent<DebugDotDrawer>().dotColor = color;
-        emptyGameObject.GetComponent<DebugDotDrawer>().dotRadius = rad;
-        emptyGameObject.transform.position = position;
     }
 
     void Fern()
@@ -149,6 +102,88 @@ public class ShapeGenerator : MonoBehaviour
         CreateObjects(positions, Color.green, .01f);
         //return positions;
     }
+
+    float CalculateOptRatio(int N)
+    {
+        // Calc angle in deg
+        int angle = (N - 2) * 180 / N;
+
+        // Calc number of iterations for a
+        int n = Mathf.FloorToInt(N / 4);
+        
+        // Calc a from: ∑_(i=1)^n(cos⁡[i(PI-ϕ)])
+        float a = n == 0 ? 0f : Enumerable.Range(1, n).Sum(i => Mathf.Cos(i * (Mathf.PI - angle * Mathf.PI / 180f)));
+
+        // Return ratio
+        return (1 + 2 * a) / (2 + 2 * a);
+    }
+
+    Color[] GenColors()
+    {
+        var a = new Color[vertices.Length];
+        // Generate a unique color for each vertex
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            a[i] = Random.ColorHSV();
+        }
+        return a;
+    }
+    #endregion Generation
+
+    #region BaseRegPolygon
+    //private Vector3[] CalculateShapePositions()
+    //{
+    //    Vector3[] calculatedPositions = shapeType switch
+    //    {
+    //        ShapeType.Triangle => CalculateRegularPolygonPositions(3),
+    //        ShapeType.Square => CalculateRegularPolygonPositions(4),
+    //        ShapeType.Pentagon => CalculateRegularPolygonPositions(5),
+    //        ShapeType.Hexagon => CalculateRegularPolygonPositions(6),
+    //        _ => new Vector3[1],
+    //    };
+    //    return calculatedPositions;
+    //}
+
+    private Vector3[] CalculateShapePositions()
+    {
+        Vector3[] calculatedPositions = CalculateRegularPolygonPositions(NumVertecies);
+        return calculatedPositions;
+    }
+
+    private Vector3[] CalculateRegularPolygonPositions(int numberOfSides)
+    {
+        Vector3[] calculatedPositions = new Vector3[numberOfSides];
+        float angleStep = 2 * Mathf.PI / numberOfSides; // Calculate the angle between each vertex
+
+        for (int i = 0; i < numberOfSides; i++)
+        {
+            float angle = angleStep * i + Mathf.PI / 2; // Adding π/2 to rotate counterclockwise by 90 degrees
+            float x = BaseShapeRadius * Mathf.Cos(angle);
+            float y = BaseShapeRadius * Mathf.Sin(angle);
+            calculatedPositions[i] = transform.position + new Vector3(x, y, 0);
+        }
+
+        return calculatedPositions;
+    }
+    #endregion BaseRegPolygon
+
+    #region CreatePoints
+    private void CreateObjects(Vector3[] calculatedPositions, Color color, float rad)
+    {
+        foreach (Vector3 pos in calculatedPositions)
+        {
+            CreateObject(pos, color, rad);
+        }
+    }
+
+    private void CreateObject(Vector3 position, Color color, float rad)
+    {
+        GameObject emptyGameObject = Instantiate(dot, transform);
+        emptyGameObject.GetComponent<DebugDotDrawer>().dotColor = color;
+        emptyGameObject.GetComponent<DebugDotDrawer>().dotRadius = rad;
+        emptyGameObject.transform.position = position;
+    }
+    #endregion CreatePoints
 
     private void Update()
     {
