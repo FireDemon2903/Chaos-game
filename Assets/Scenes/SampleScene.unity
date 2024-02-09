@@ -137,11 +137,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1421244587559930821, guid: f6d875b9ea8131646a792d10ae590578, type: 3}
       propertyPath: NumVertecies
-      value: 7
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1421244587559930821, guid: f6d875b9ea8131646a792d10ae590578, type: 3}
+      propertyPath: BaseShapeRadius
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1421244587559930821, guid: f6d875b9ea8131646a792d10ae590578, type: 3}
       propertyPath: KiloNumOfPoints
-      value: 1000
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 5630380595093172252, guid: f6d875b9ea8131646a792d10ae590578, type: 3}
       propertyPath: m_LocalPosition.x

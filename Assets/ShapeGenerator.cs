@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -17,6 +19,8 @@ public class ShapeGenerator : MonoBehaviour
     [Min(0)] public int KiloNumOfPoints;
     int Points => KiloNumOfPoints * 1000;
 
+    [SerializeField] int InstansiatedPoints = 0;
+
     public GameObject dot;
 
     Vector3[] vertices;
@@ -24,14 +28,13 @@ public class ShapeGenerator : MonoBehaviour
 
     private void Start()
     {
-        //print(CalculateOptRatio(6));
-        //print(CAlculateOptRatio(6));
-
         vertices = CalculateShapePositions();
         CreateObjects(vertices, Color.green, .1f);
         GenerateFractal(Points);
+        //Fern();
 
-        ////Fern();
+        //StartCoroutine(YieldGenerateFractal(Points));
+        //StartCoroutine(YieldFern());
 
         Debug.Break();  // Pause editor so computer does not die
     }
@@ -51,7 +54,7 @@ public class ShapeGenerator : MonoBehaviour
             Vector3 randomPos = vertices[index]; // Get the position of the selected vertex
 
             // New point calculation using the custom ratio
-            Vector3 newDot = (sPos + randomPos) * (1 - ratio);
+            Vector3 newDot = (randomPos + sPos) * (1-ratio);
 
             pointPos[i] = newDot; // Store the new point
             sPos = newDot; // Move the current position to the new point
@@ -63,9 +66,8 @@ public class ShapeGenerator : MonoBehaviour
     void Fern()
     {
         float x = transform.position.x;
-        float y = transform.position.x;
-        float xn = 0.0f;
-        float yn = 0.0f;
+        float y = transform.position.y;
+        float xn, yn = 0.0f;
 
         Vector3[] positions = new Vector3[Points];
 
@@ -95,13 +97,51 @@ public class ShapeGenerator : MonoBehaviour
             }
             //CreateObject(new Vector3(xn, yn, 0f), Color.green, .01f);
             positions[i] = new Vector3(xn, yn, 0);
-            //Console.WriteLine($"xn: {xn}, yn:\t\t{yn}");
             x = xn;
             y = yn;
         }
 
         CreateObjects(positions, Color.green, PointRadius);
         //return positions;
+    }
+
+    IEnumerator YieldFern()
+    {
+        float x = transform.position.x;
+        float y = transform.position.y;
+        float xn, yn = 0.0f;
+
+        //Vector3[] positions = new Vector3[Points];
+
+        for (int i = 0; i < Points; i++)
+        {
+            float r = Random.value;
+
+            if (r < .01)
+            {
+                xn = 0.0f;
+                yn = 0.16f * y;
+            }
+            else if (r < 0.86)
+            {
+                xn = 0.85f * x + 0.04f * y;
+                yn = -0.04f * x + 0.85f * y + 1.6f;
+            }
+            else if (r < 0.93)
+            {
+                xn = 0.2f * x - 0.26f * y;
+                yn = 0.23f * x + 0.22f * y + 1.6f;
+            }
+            else
+            {
+                xn = -0.15f * x + 0.28f * y;
+                yn = 0.26f * x + 0.24f * y + 0.44f;
+            }
+            yield return CreateObject(new Vector3(xn, yn, 0f), Color.green, .01f);
+            //positions[i] = new Vector3(xn, yn, 0);
+            x = xn;
+            y = yn;
+        }
     }
 
     float CalculateOptRatio(int N)
@@ -177,12 +217,14 @@ public class ShapeGenerator : MonoBehaviour
         }
     }
 
-    private void CreateObject(Vector3 position, Color color, float rad)
+    private GameObject CreateObject(Vector3 position, Color color, float rad)
     {
         GameObject emptyGameObject = Instantiate(dot, transform);
         emptyGameObject.GetComponent<DebugDotDrawer>().dotColor = color;
         emptyGameObject.GetComponent<DebugDotDrawer>().dotRadius = rad;
         emptyGameObject.transform.position = position;
+        InstansiatedPoints++;
+        return emptyGameObject;
     }
     #endregion CreatePoints
 
